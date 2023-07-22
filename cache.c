@@ -42,9 +42,7 @@ int cache_destroy(void)
 
   cache_size = 0;
   fifoIndex = 0;
-  num_hits = 0;
   cacheEnabled = 0;
-  num_queries = 0;
 
   return 1;
 }
@@ -118,4 +116,6 @@ bool cache_enabled(void)
 void cache_print_hit_rate(void)
 {
   fprintf(stderr, "Hit rate: %5.1f%%\n", 100 * (float)num_hits / num_queries);
+  num_hits = 0;
+  num_queries = 0;
 }
