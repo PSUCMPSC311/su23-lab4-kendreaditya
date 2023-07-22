@@ -150,27 +150,42 @@ int mdadm_read(uint32_t start_addr, uint32_t read_len, uint8_t *read_buf)
         jbod_operation(jbod_block, NULL);
         int jbod_read = op(0, 0, JBOD_READ_BLOCK);
         jbod_operation(jbod_read, temp_buf);
-
+        // Calculate the number of bytes remaining to read in the data block.
         remaining_bytes = read_len - read_bytes;
+
+        // Check if the remaining bytes can fit in the current 256-byte block.
         if (offset + remaining_bytes < 256)
         {
+          // If it fits, copy the remaining_bytes from temp_buf to read_buf starting at read_bytes.
           memcpy(read_buf + read_bytes, temp_buf + offset, remaining_bytes);
+          // Update the number of bytes read so far.
           read_bytes += remaining_bytes;
         }
         else
         {
+          // If remaining_bytes is greater than what can fit in the current block (256 bytes),
+          // copy only the bytes that fit until the end of the current block.
           memcpy(read_buf + read_bytes, temp_buf + offset, 256 - offset);
+          // Update the number of bytes read so far.
           read_bytes += 256 - offset;
         }
 
+        // Update the current_address pointer by the number of bytes read in this iteration.
         current_address += read_bytes;
+
+        // Calculate the new current_disk and current_block based on the updated current_address.
         current_disk = current_address / 65536;
         current_block = (current_address % 65536) / 256;
 
+        // Seek to the updated current_disk on the JBOD (Just a Bunch Of Disks) system.
         int update_disk = op(current_disk, 0, JBOD_SEEK_TO_DISK);
         jbod_operation(update_disk, NULL);
+
+        // Seek to the updated current_block on the selected disk in the JBOD system.
         int update_block = op(0, current_block, JBOD_SEEK_TO_BLOCK);
         jbod_operation(update_block, NULL);
+
+        // Reset the offset to zero for the next iteration.
         offset = 0;
       }
 
